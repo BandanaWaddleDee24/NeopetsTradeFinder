@@ -12,10 +12,12 @@
         h1 {
             color: #4CAF50;
         }
-        textarea {
+        input {
             width: 100%;
-            height: 150px;
+            padding: 10px;
             margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
         }
         button {
             background-color: #4CAF50;
@@ -40,109 +42,62 @@
 </head>
 <body>
     <h1>Jellyneo Trade Matcher</h1>
-    <p>Plak hier de gebruikers van de "Up For Trade"-lijst:</p>
-    <textarea id="uftList" placeholder="Gebruikers (1 per regel)"></textarea>
+    <p>Voer de URL van de "Up For Trade"-lijst in:</p>
+    <input type="text" id="uftUrl" placeholder="https://items.jellyneo.net/item/.../uft-list/">
 
-    <p>Plak hier de gebruikers van de "Seeking"-lijst:</p>
-    <textarea id="seekingList" placeholder="Gebruikers (1 per regel)"></textarea>
+    <p>Voer de URL van de "Seeking"-lijst in:</p>
+    <input type="text" id="seekingUrl" placeholder="https://items.jellyneo.net/item/.../seeking-list/">
 
     <button id="findMatchesButton">🔍 Vind Matches</button>
 
     <div class="results" id="results"></div>
 
     <script>
-        document.getElementById('findMatchesButton').addEventListener('click', () => {
-            const uftText = document.getElementById('uftList').value;
-            const seekingText = document.getElementById('seekingList').value;
+        document.getElementById('findMatchesButton').addEventListener('click', async () => {
+            const uftUrl = document.getElementById('uftUrl').value.trim();
+            const seekingUrl = document.getElementById('seekingUrl').value.trim();
 
-            // Splits de input in lijsten en maak alles lowercase om hoofdlettergevoeligheid te voorkomen
-            const uftUsers = uftText.split('\n').map(user => user.trim().toLowerCase()).filter(user => user);
-            const seekingUsers = seekingText.split('\n').map(user => user.trim().toLowerCase()).filter(user => user);
-
-            // Zoek naar overeenkomsten
-            const matches = uftUsers.filter(user => seekingUsers.includes(user));
-
-            // Toon de resultaten
-            const resultsDiv = document.getElementById('results');
-            if (matches.length > 0) {
-                resultsDiv.innerHTML = `<h3>Matches gevonden:</h3><ul>${matches.map(user => `<li>${user}</li>`).join('')}</ul>`;
-            } else {
-                resultsDiv.innerHTML = '<h3>Geen matches gevonden.</h3>';
+            if (!uftUrl || !seekingUrl) {
+                alert('Beide URL\'s zijn vereist!');
+                return;
             }
-        });
-    </script>
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jellyneo Trade Matcher</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        h1 {
-            color: #4CAF50;
-        }
-        textarea {
-            width: 100%;
-            height: 150px;
-            margin-bottom: 10px;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        .results {
-            margin-top: 20px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            background-color: #f9f9f9;
-        }
-    </style>
-</head>
-<body>
-    <h1>Jellyneo Trade Matcher</h1>
-    <p>Plak hier de gebruikers van de "Up For Trade"-lijst:</p>
-    <textarea id="uftList" placeholder="Gebruikers (1 per regel)"></textarea>
 
-    <p>Plak hier de gebruikers van de "Seeking"-lijst:</p>
-    <textarea id="seekingList" placeholder="Gebruikers (1 per regel)"></textarea>
+            try {
+                // Fetch beide URL's
+                const [uftResponse, seekingResponse] = await Promise.all([
+                    fetch(uftUrl),
+                    fetch(seekingUrl)
+                ]);
 
-    <button id="findMatchesButton">🔍 Vind Matches</button>
+                if (!uftResponse.ok || !seekingResponse.ok) {
+                    throw new Error('Kon een of beide lijsten niet ophalen. Controleer de URL\'s.');
+                }
 
-    <div class="results" id="results"></div>
+                const uftHtml = await uftResponse.text();
+                const seekingHtml = await seekingResponse.text();
 
-    <script>
-        document.getElementById('findMatchesButton').addEventListener('click', () => {
-            const uftText = document.getElementById('uftList').value;
-            const seekingText = document.getElementById('seekingList').value;
+                // Parse HTML van beide lijsten
+                const parser = new DOMParser();
+                const uftDoc = parser.parseFromString(uftHtml, 'text/html');
+                const seekingDoc = parser.parseFromString(seekingHtml, 'text/html');
 
-            // Splits de input in lijsten en maak alles lowercase om hoofdlettergevoeligheid te voorkomen
-            const uftUsers = uftText.split('\n').map(user => user.trim().toLowerCase()).filter(user => user);
-            const seekingUsers = seekingText.split('\n').map(user => user.trim().toLowerCase()).filter(user => user);
+                // Haal gebruikers uit beide lijsten
+                const uftUsers = Array.from(uftDoc.querySelectorAll('table tbody tr td:first-child')).map(el => el.textContent.trim());
+                const seekingUsers = Array.from(seekingDoc.querySelectorAll('table tbody tr td:first-child')).map(el => el.textContent.trim());
 
-            // Zoek naar overeenkomsten
-            const matches = uftUsers.filter(user => seekingUsers.includes(user));
+                // Zoek overeenkomsten
+                const matches = uftUsers.filter(user => seekingUsers.includes(user));
 
-            // Toon de resultaten
-            const resultsDiv = document.getElementById('results');
-            if (matches.length > 0) {
-                resultsDiv.innerHTML = `<h3>Matches gevonden:</h3><ul>${matches.map(user => `<li>${user}</li>`).join('')}</ul>`;
-            } else {
-                resultsDiv.innerHTML = '<h3>Geen matches gevonden.</h3>';
+                // Toon de resultaten
+                const resultsDiv = document.getElementById('results');
+                if (matches.length > 0) {
+                    resultsDiv.innerHTML = `<h3>Matches gevonden:</h3><ul>${matches.map(user => `<li>${user}</li>`).join('')}</ul>`;
+                } else {
+                    resultsDiv.innerHTML = '<h3>Geen matches gevonden.</h3>';
+                }
+            } catch (error) {
+                console.error(error);
+                alert('Er is een fout opgetreden. Controleer de URL\'s en probeer het opnieuw.');
             }
         });
     </script>
