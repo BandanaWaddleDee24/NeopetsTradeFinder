@@ -55,9 +55,9 @@
             const uftText = document.getElementById('uftList').value;
             const seekingText = document.getElementById('seekingList').value;
 
-            // Splits de input in lijsten
-            const uftUsers = uftText.split('\n').map(user => user.trim()).filter(user => user);
-            const seekingUsers = seekingText.split('\n').map(user => user.trim()).filter(user => user);
+            // Splits de input in lijsten en maak alles lowercase om hoofdlettergevoeligheid te voorkomen
+            const uftUsers = uftText.split('\n').map(user => user.trim().toLowerCase()).filter(user => user);
+            const seekingUsers = seekingText.split('\n').map(user => user.trim().toLowerCase()).filter(user => user);
 
             // Zoek naar overeenkomsten
             const matches = uftUsers.filter(user => seekingUsers.includes(user));
