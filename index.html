@@ -65,25 +65,28 @@
             try {
                 // Fetch beide URL's
                 const [uftResponse, seekingResponse] = await Promise.all([
-                    fetch(uftUrl),
-                    fetch(seekingUrl)
+                    fetch(uftUrl).then(res => {
+                        if (!res.ok) throw new Error(`Kon de UFT-lijst niet ophalen (${res.status})`);
+                        return res.text();
+                    }),
+                    fetch(seekingUrl).then(res => {
+                        if (!res.ok) throw new Error(`Kon de Seeking-lijst niet ophalen (${res.status})`);
+                        return res.text();
+                    })
                 ]);
-
-                if (!uftResponse.ok || !seekingResponse.ok) {
-                    throw new Error('Kon een of beide lijsten niet ophalen. Controleer de URL\'s.');
-                }
-
-                const uftHtml = await uftResponse.text();
-                const seekingHtml = await seekingResponse.text();
 
                 // Parse HTML van beide lijsten
                 const parser = new DOMParser();
-                const uftDoc = parser.parseFromString(uftHtml, 'text/html');
-                const seekingDoc = parser.parseFromString(seekingHtml, 'text/html');
+                const uftDoc = parser.parseFromString(uftResponse, 'text/html');
+                const seekingDoc = parser.parseFromString(seekingResponse, 'text/html');
 
                 // Haal gebruikers uit beide lijsten
                 const uftUsers = Array.from(uftDoc.querySelectorAll('table tbody tr td:first-child')).map(el => el.textContent.trim());
                 const seekingUsers = Array.from(seekingDoc.querySelectorAll('table tbody tr td:first-child')).map(el => el.textContent.trim());
+
+                if (!uftUsers.length || !seekingUsers.length) {
+                    throw new Error('Geen gebruikers gevonden in een van de lijsten.');
+                }
 
                 // Zoek overeenkomsten
                 const matches = uftUsers.filter(user => seekingUsers.includes(user));
@@ -97,10 +100,10 @@
                 }
             } catch (error) {
                 console.error(error);
-                alert('Er is een fout opgetreden. Controleer de URL\'s en probeer het opnieuw.');
+                const resultsDiv = document.getElementById('results');
+                resultsDiv.innerHTML = `<h3 style="color:red;">Fout: ${error.message}</h3>`;
             }
         });
     </script>
 </body>
 </html>
-
