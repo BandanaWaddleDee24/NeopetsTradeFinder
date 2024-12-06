@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jellyneo Trade Matcher</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            color: #4CAF50;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            margin-bottom: 10px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .results {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Jellyneo Trade Matcher</h1>
+    <p>Plak hier de gebruikers van de "Up For Trade"-lijst:</p>
+    <textarea id="uftList" placeholder="Gebruikers (1 per regel)"></textarea>
+
+    <p>Plak hier de gebruikers van de "Seeking"-lijst:</p>
+    <textarea id="seekingList" placeholder="Gebruikers (1 per regel)"></textarea>
+
+    <button id="findMatchesButton">🔍 Vind Matches</button>
+
+    <div class="results" id="results"></div>
+
+    <script>
+        document.getElementById('findMatchesButton').addEventListener('click', () => {
+            const uftText = document.getElementById('uftList').value;
+            const seekingText = document.getElementById('seekingList').value;
+
+            // Splits de input in lijsten
+            const uftUsers = uftText.split('\n').map(user => user.trim()).filter(user => user);
+            const seekingUsers = seekingText.split('\n').map(user => user.trim()).filter(user => user);
+
+            // Zoek naar overeenkomsten
+            const matches = uftUsers.filter(user => seekingUsers.includes(user));
+
+            // Toon de resultaten
+            const resultsDiv = document.getElementById('results');
+            if (matches.length > 0) {
+                resultsDiv.innerHTML = `<h3>Matches gevonden:</h3><ul>${matches.map(user => `<li>${user}</li>`).join('')}</ul>`;
+            } else {
+                resultsDiv.innerHTML = '<h3>Geen matches gevonden.</h3>';
+            }
+        });
+    </script>
+</body>
+</html>
